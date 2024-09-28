@@ -1,7 +1,4 @@
-
-<span style="font-size:1.5em;">WARNING: THIS PROJECT ONLY SERVES AS A HISTORICAL REFERENCE TO SUPPORT THE ANALYSIS CARRIED OUT IN THE FOLLOWING PUBLICATION.
-Mouliere, Chandrananda et al. _Enhanced detection of circulating tumor DNA by fragment size analysis_ Science Translational Medicine (2018)
-THIS PROJECT IS NO LONGER MAINTAINED AT THIS LOCATION.</span>
+<span style="font-size:1.5em;">This is forked from https://github.com/sdchandra/CNAclinic</span>
 
 -------------------------------------------------------------------------------------------------
 CNAclinic: An R package for end-to-end copy number analysis from shallow whole-genome sequencing

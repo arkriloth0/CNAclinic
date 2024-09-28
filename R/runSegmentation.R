@@ -317,7 +317,8 @@ runSegmentation=function(x,
                 undo.SD=undo.SD,
                 segmentStatistic=segmentStatistic,
                 normalizeSegmentedBins=normalizeSegmentedBins,
-                inter=inter)
+                inter=inter
+                )
 
         }, error=function(e) {
             message(paste(
@@ -328,7 +329,8 @@ runSegmentation=function(x,
         })
 
         if(flag){
-            segCBS <- as.data.frame(segDF, stringsAsFactors=FALSE)
+            segCBS <- as.data.frame(segDF[["segDF"]], stringsAsFactors=FALSE)
+            x[sampleNames] <- segDF[["copyNumber"]]
 
             if(!all(dim(segCBS) == c(totalBins, length(sampleNames)))){
                 stop(paste("\nCBS segmentation did not return the expected",
@@ -672,16 +674,16 @@ runSegmentation=function(x,
         matrix(NA, nrow=nrow(x), ncol = length(sampleNames) * 2))
 
     for(i in 1:length(sampleNames)){
-        message(sampleNames[i])
-        sampleRangedData <- IRanges::RangedData(
-            ranges=IRanges::IRanges(start=x$start, width=(x$end - x$start) + 1),
-            space=x$chromosome,
-            copy=copyNumber[ , sampleNames[i]])
-
-        sampleHMMData = suppressMessages(HMMcopy::HMMsegment(sampleRangedData, verbose = TRUE))
-
-        hmmSegsCalls[ ,((i*2)-1):(i*2)] <- .splitCollatedSegs(
-            x=sampleHMMData$segs, binSize=binSize, segmentType="HMM")
+      message(sampleNames[i])
+      sampleRangedData <- IRanges::RangedData(
+        ranges=IRanges::IRanges(start=x$start, width=(x$end - x$start) + 1),
+        space=x$chromosome,
+        copy=copyNumber[ , sampleNames[i]])
+      
+      sampleHMMData = suppressMessages(HMMcopy::HMMsegment(sampleRangedData, verbose = TRUE))
+      
+      hmmSegsCalls[ ,((i*2)-1):(i*2)] <- .splitCollatedSegs(
+        x=sampleHMMData$segs, binSize=binSize, segmentType="HMM")
     }
 
     hmmSegsCalls <- data.frame(hmmSegsCalls, stringsAsFactors=FALSE)
@@ -700,7 +702,7 @@ runSegmentation=function(x,
 #############################################################################
 
 .getCBSSegments <- function(x, alpha=1e-10, undo.splits="sdundo", undo.SD=1.0,
-    segmentStatistic="seg.mean", normalizeSegmentedBins=FALSE,
+    segmentStatistic="seg.mean", normalizeSegmentedBins=TRUE,
     inter=c(-0.1, 0.1)){
 
     condition <- x$usebin
@@ -782,18 +784,20 @@ runSegmentation=function(x,
         segDF <- matrix(NA_real_, nrow=nrow(segDF), ncol=ncol(segDF))
         segDF[condition, ] <- CGHbase::segmented(postseg)
 
-        #copyNumber[condition, ] <- CGHbase::copynumber(postseg)
+        copyNumber <- matrix(NA_real_, nrow=nrow(segDF), ncol=ncol(segDF))
+        # copyNumber[condition, ] <- .stabilisedTrans(CGHbase::copynumber(postseg), inv=TRUE)
+        copyNumber[condition, ] <- CGHbase::copynumber(postseg)
 
         row.names(segDF) <- NULL
-        #row.names(copyNumber) <- NULL
+        row.names(copyNumber) <- NULL
 
         colnames(segDF) <- sampleNames
-        #colnames(copyNumber) <- sampleNames
+        colnames(copyNumber) <- sampleNames
 
     }
 
-    return(segDF)
-    #return(list(segDF=segDF, copyNumber=copyNumber))
+    # return(segDF)
+    return(list(segDF=segDF, copyNumber=copyNumber))
 
 }
 
@@ -848,7 +852,7 @@ runSegmentation=function(x,
 
     x$chromosome <- as.numeric(chromosome)
 
-    x <- x[order(x["chromosome"], x["start"]), ]
+    x <- dplyr::arrange(x,chromosome)
 
     x$chromosome <- as.character(x$chromosome)
 
